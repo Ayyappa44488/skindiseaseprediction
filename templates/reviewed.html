@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Table Design || Future Web</title>
+    <link rel="stylesheet" href="/static/dashboard.css" />
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
+</head>
+
+<body>
+    <div class="header_fixed" id="userdata">
+        <table>
+            <div class="head">
+                <thead>
+                    <tr style="border: 2px solid #53C9C2;">
+                        <th>Prescribed<span id="span">Dashboard</span></th>
+                        <th></th>
+                        <th></th>
+                        <th><button id="download-pdf"><i class="uil uil-print icon"
+                                    style="margin-right:10px;"></i> Export as pdf</button></th>
+                    </tr>
+                </thead>
+            </div>
+            <tbody>
+                <tr style="border: 2px solid #53C9C2;">
+                    <th>ID</th>
+                    <th>Image</th>
+                    <th>Result</th>
+                    <th>Prescription</th>
+                </tr>
+                {% for row in data1 %}
+                <tr>
+                    <td>{{row.unique_number}}</td>
+                    <td><img src="data:photo/png;base64,{{ row.photo }}" alt="Image" /></td>
+                    <td>{{ row.disease }}</td>
+                    <td>{{row.description}}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div><br>
+    <center><button onclick="location.href='/loggedin'" class="btn">Go Home</button></center>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.js"></script>
+    <script>
+        window.onload = function () {
+            document.getElementById("download-pdf")
+                .addEventListener("click", () => {
+                    const invoice = this.document.getElementById("userdata");
+                    console.log(invoice);
+                    console.log(window);
+                    html2pdf().from(invoice).save();
+                })
+        }
+    </script>
+</body>
+</html>

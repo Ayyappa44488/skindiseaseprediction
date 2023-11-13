@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultants</title>
+    <link rel="stylesheet" href="/static/dashboarddoc.css" />
+    <link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/line.css">
+</head>
+
+<body>
+    <div class="header_fixed">
+        <table>
+            <div class="head">
+                <thead>
+                    <tr style="border: 2px solid #53C9C2;">
+                        <th><span id="span">Consultants</span></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+            </div>
+            <tbody>
+                <tr style="border: 2px solid #53C9C2;">
+                    <th>id</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                </tr>
+                {% for row in data1 %}
+                <tr>
+                    <td>{{ row.unique_number }}</td>
+                    <td>{{row.date}}</td>
+                    <td>{{row.time}}</td>
+                    <td><button class="btn" data-unique-number="{{ row.unique_number }}"><b><i class="uil uil-eye" style="margin-right:10px;"> view</b></button></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div><br>
+    <center><button onclick="location.href='/loggedin'" class="btn">Go Home</button></center>
+    <div class="popup" id="popup-1">
+        <div class="overlay"></div>
+        <div class="rectangle">
+            <span class="vector" onclick="togglePopup()">&times;</span>
+            <span class="text">Disease Description</span>
+            <img id="photoPlaceholder" src="" alt="">
+            <div class="popup-img">
+                <span>&times;</span>
+                <img id="photoPlaceholder" src="" alt="">
+            </div>
+            <span class="disease">Disease Predicted by our Tool:</span>
+            <b><span class="disease" id="diseasePlaceholder" style="left:310px;"></span></b>
+            <hr class="line">
+            <span class="text" style="top:320px;left: 220px;">Prescription</span>
+            <form id="myform" action="/prescription" method="POST">
+            <textarea cols="55" rows="15" placeholder="   Write Your Prescription Here" name="prescription"></textarea>
+            <button type="submit"><b>Give Prescription</b></button>
+            </form>
+            <br>
+        </div>
+    </div>
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <div class="loading-spinner"></div>
+    </div>
+    <script>
+        function showLoadingOverlay() {
+            const loadingOverlay = document.getElementById("loadingOverlay");
+            loadingOverlay.style.display = "flex";
+        }
+        
+        // Function to hide the loading overlay
+        function hideLoadingOverlay() {
+            const loadingOverlay = document.getElementById("loadingOverlay");
+            loadingOverlay.style.display = "none";
+        }
+        document.querySelectorAll('.rectangle img').forEach(image=>{
+            image.onclick = () =>{
+                document.querySelector('.popup-img').style.display = 'block';
+                document.querySelector('.popup-img img').src = image.getAttribute('src');
+            }
+        });
+
+        document.querySelector('.popup-img span').onclick = () =>{
+            document.querySelector('.popup-img').style.display = 'none';
+        }
+     function togglePopup() {
+        document.getElementById("popup-1").classList.toggle("active");}   
+    // Get all elements with class "view-button"
+    const viewButtons = document.querySelectorAll('.btn');
+
+// Add click event listener to each button
+viewButtons.forEach(button => {
+    button.addEventListener('click', function() {
+        // Retrieve the unique_number from the data attribute
+        const uniqueNumber = button.getAttribute('data-unique-number');
+
+        // Send an AJAX request to the Flask server
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/doctor', true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+
+        // Prepare the data to send
+        const data = {
+            uniqueNumber: uniqueNumber
+        };
+
+        // Convert data to JSON format
+        const jsonData = JSON.stringify(data);
+
+        // Send the request
+        xhr.send(jsonData);
+
+        // Handle the response from the server
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                const response = JSON.parse(xhr.responseText);
+        
+                if (response.length > 0) {
+                    const diseaseInfo = response[0];
+                    // Assuming response is a list of objects with photo and disease properties
+        
+                    // Update the image placeholder
+                    const photoPlaceholder = document.getElementById("photoPlaceholder");
+                    photoPlaceholder.src = `data:image/jpeg;base64, ${diseaseInfo.photo}`;
+                    // Update the disease placeholder
+                    const diseasePlaceholder = document.getElementById("diseasePlaceholder");
+                    diseasePlaceholder.textContent = diseaseInfo.disease;
+                    togglePopup(); // Assuming this function shows a popup with the disease and photo information
+                } else {
+                    console.error('No data found for the unique number.');
+                }
+            } else {
+                // Handle errors
+                console.error('Request failed with status:', xhr.status);
+            }
+        };
+    });
+});  
+/*const urlParams = new URLSearchParams(window.location.search);
+        const alertMessage = urlParams.get('alert');
+
+        // If there's an alert message, display it as an alert
+        if (alertMessage) {
+            alert(alertMessage);
+            const newUrl = window.location.origin + window.location.pathname;
+            history.replaceState({}, document.title, newUrl);
+        }  */  
+const form = document.getElementById("myform");
+form.addEventListener("submit", (event) => {
+    event.preventDefault(); // Prevent the default form submission
+    showLoadingOverlay(); // Show the loading overlay
+    // You can make your AJAX request or any other server request here
+    // Once the request is complete, call hideLoadingOverlay() to hide the overlay
+    // Example: You can use fetch() to make an AJAX request to your Flask server
+    fetch("/prescription", {
+        method: "POST",
+        body: new FormData(form),
+    })
+        .then(response => {
+            if (response.ok) {
+                hideLoadingOverlay();
+                alert('your prescription has been sent to the user');
+                hideLoadingOverlay();
+                location.reload(); // Parse the response JSON
+            } else {
+                console.error('Fetch failed');
+                return Promise.reject('Fetch failed');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    
+});  
+</script> 
+</body>
+</html>

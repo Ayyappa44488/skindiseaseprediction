@@ -1,0 +1,70 @@
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="utf-8">
+    <title> OTP Reset Password</title>
+    <link rel="stylesheet" href="/static/otppassword.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+</head>
+<body>
+    <div class="wrapper">
+        <div class="title-text">
+            <div class="title login">
+                Enter 6 Digit OTP
+            </div>
+        </div>
+       <h3 style="color:tomato;text-align:center;">{{message}}</h3>
+        <div class="form-container">
+            <div class="form-inner">
+                <form action="/verify_otp" class="login" method="POST">
+                    <br>
+                    <div>
+                        <!-- <label for="fname" style="color: tomato;">**** For alert roi ****</label> -->
+                    </div><br>
+                    <section>
+                        <div class="inputs">
+                         <input id='input1' type='text' maxLength="1" name="otp1"/>
+                         <input id='input2' type='text' maxLength="1" name="otp2"/>
+                         <input id='input3' type='text' maxLength="1" name="otp3"/>
+                         <input id='input4' type='text' maxLength="1" name="otp4"/>
+                         <input type="text" id="input5" maxlength="1"name="otp5"/>
+                         <input type="text" id= "input6" maxlength="1"name="otp6"/>
+                        </div>
+                      </section><br>
+                    <div class="field btn">
+                        <div class="btn-layer"></div><a href="">
+                            <input type="submit" value="Verify OTP">
+                    </div><br>
+                    <div class="pass-link">
+                        <a href="/resend_otp">Resend OTP</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+   <script>
+    function addListener(input) {
+  input.addEventListener("keyup", () => {
+    const code = parseInt(input.value);
+    if (code >= 0 && code <= 9) {
+      const n = input.nextElementSibling;
+      if (n) n.focus();
+    } else {
+      input.value = "";
+    }
+
+    const key = event.key; // const {key} = event; ES6+
+    if (key === "Backspace" || key === "Delete") {
+      const prev = input.previousElementSibling;
+      if (prev) prev.focus();
+    }
+  });
+}
+const inputs = ["input1", "input2", "input3", "input4","input5","input6"];
+
+inputs.map((id) => {
+  const input = document.getElementById(id);
+  addListener(input);
+});
+   </script>
+</body>
+</html>

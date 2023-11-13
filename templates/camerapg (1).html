@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link class="logo1" href="/static/default.png" rel="icon" type="image/x-icon">
+    <title>Camera page</title>
+    <link rel="stylesheet" href="/static/camerapg.css">
+</head>
+<body>
+    <div id="mySidenav" class="sidenav">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+        <a href="/loggedin">Home</a>
+        <a href="/results">Results</a>
+        <a href="/loggedin#Contact">Contact Us</a>
+        <div class="navdown">
+            <a href="#">Trems of Use</a>
+            <a href="#">Privacy Policy</a>
+        </div>
+    </div>
+    
+    <span style="font-size:30px;cursor:pointer" onclick="openNav()">&#9776;</span>
+    
+
+    <div class="center">
+        <a href="/camera">
+            <img src="/static/cameraicon.png" alt="camera" width="280" height="280">
+        </a>
+    </div>
+    <div class="button">
+        <a href="#">
+            <form action="/upload" class="login" method="POST" enctype="multipart/form-data">
+                <input type="file" name="file" id="uploadbtn" required>
+                <label for="uploadbtn"><img src="/static/upload-file.png" class="button1" alt="upload" width="150" height="150"><a href="#"><div class="button3">UPLOAD</div></a></label>
+        <button type="submit" class="nocolorbtn">
+            <div class="button2">
+                <div class="letter-image">
+                    <div class="animated-mail">
+                        <div class="back-fold"></div>
+                        <div class="letter">
+                            <div class="letter-border"></div>
+                            <div class="letter-title"></div>
+                            <div class="letter-context"></div>
+                            <div class="letter-stamp">
+                                <div class="letter-stamp-inner"></div>
+                            </div>
+                        </div>
+                        <div class="top-fold"></div>
+                        <div class="body"></div>
+                        <div class="left-fold"></div>
+                    </div>
+                    <div class="shadow"></div>
+                </div>
+            </div>
+            <a href="#"><div class="button4" >RESULT</div></a>
+        </button>
+        </form>  
+    </a>
+    <div class="popup" id="popup-1">
+        <div class="overlay"></div>
+        <div class="content">
+            <div class="close-btn" onclick="togglePopup()">&times;</div>
+            <div class="container">
+                <label for="dropdown">Select Language:</label>
+                <select id="dropdown" class="dropdown" onchange="handleDropdownChange()">
+                    <option value="en">English</option>
+                    <option value="te">తెలుగు</option>
+                    <option value="hi">हिंदी</option>
+                    <option value="ta">தமிழ்</option>
+                    <option value="kn">ಕನ್ನಡ</option>
+                    <option value="ml">മലയാളം</option>
+                </select>
+            </div>
+            <h1 id="disease"></h1>
+            <p id="diseasePlaceholder"></p>
+            <p><h2 id="description"></h2><br><span id="descriptionPlaceholder"></span></p>
+            <p><h2 id="remedies"></h2><br><span id="remediesPlaceholder"></span></p>
+            <br>
+            {%if not session['doctor'] %}
+            <center><button id="consultButton" >Consult Doctor</button></center>{%endif%}
+        </div>
+    </div>
+    <div class="sidebox" id="imageContainer">
+        <h3>** Uploaded Image **</h3>
+        <div class="uploadimg">
+            <img src="\static\uploading.jpg" alt="" style="height: 350px;width: 300px;border-radius: 5px;" id="uploadedImage">
+        </div>
+     </div>
+     <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <script>
+            for (let i = 0; i < 15; i++) {
+                let parentEl = document.createElement("div");
+                parentEl.classList.add("strand");
+                parentEl.innerHTML = `
+                  <div class="top" style="animation-delay:${i * -0.2}s"></div>
+                  <div class="bottom" style="animation-delay:${-1.5 - (i * 0.2)}s"></div>
+                `;
+                document.querySelector("#loadingOverlay").appendChild(parentEl);
+            }
+        </script>
+    </div>
+    <div class="loading-overlay" id="loadingOverlay1" style="display: none;">
+        <div class="loading-spinner"></div>
+    </div>
+    <script>
+        function openNav() {
+            document.getElementById("mySidenav").style.width = "250px";
+        }
+
+        function closeNav() {
+            document.getElementById("mySidenav").style.width = "0";
+        }
+        function togglePopup() {
+            document.getElementById("popup-1").classList.toggle("active");
+        }  
+   
+        document.addEventListener("DOMContentLoaded", () => {
+            const uploadbtn = document.getElementById("uploadbtn");
+            const uploadedImage = document.getElementById("uploadedImage");
+            uploadbtn.addEventListener("change", (e) => {
+                const file = e.target.files[0];
+        
+                if (file) {
+                    // Check if the selected file is an image
+                    if (file.type.match(/image.*/)) {
+                        const reader = new FileReader();
+        
+                        reader.onload = (event) => {
+                            // Set the source of the existing img tag to the uploaded file
+                            uploadedImage.src = event.target.result;
+                        };
+        
+                        // Read the uploaded image as a data URL
+                        reader.readAsDataURL(file);
+                    } else {
+                        alert("Please select a valid image file.");
+                        uploadbtn.value = ""; // Clear the file input
+                    }
+                }
+            });
+        }); 
+        // Function to show the loading overlay
+function showLoadingOverlay() {
+    const loadingOverlay = document.getElementById("loadingOverlay");
+    loadingOverlay.style.display = "flex";
+}
+
+// Function to hide the loading overlay
+function hideLoadingOverlay() {
+    const loadingOverlay = document.getElementById("loadingOverlay");
+    loadingOverlay.style.display = "none";
+}
+const form = document.querySelector("form");
+form.addEventListener("submit", (event) => {
+    event.preventDefault(); // Prevent the default form submission
+    showLoadingOverlay(); // Show the loading overlay
+    // You can make your AJAX request or any other server request here
+    // Once the request is complete, call hideLoadingOverlay() to hide the overlay
+    // Example: You can use fetch() to make an AJAX request to your Flask server
+    fetch("/upload", {
+        method: "POST",
+        body: new FormData(form),
+    })
+        .then(response => {
+            if (response.ok) {
+                hideLoadingOverlay();
+                return response.json(); // Parse the response JSON
+            } else {
+                console.error('Fetch failed');
+                return Promise.reject('Fetch failed');
+            }
+        })
+        .then(data => {
+            const diseasePlaceholder = document.getElementById("diseasePlaceholder");
+            const descriptionPlaceholder = document.getElementById("descriptionPlaceholder");
+            const remediesPlaceholder = document.getElementById("remediesPlaceholder");
+            const disease=document.getElementById("disease")
+            const description=document.getElementById("description")
+            const remedies=document.getElementById("remedies")
+            const consult=document.getElementById("consultButton")
+            // Update placeholders with the data received from the server
+            if (data.res!="NORMAL"){
+            diseasePlaceholder.textContent = "You may have "+data.res;
+            }
+            else{diseasePlaceholder.textContent = data.res;}
+            descriptionPlaceholder.textContent = data.description;
+            remediesPlaceholder.textContent = data.remedies;
+            disease.textContent = data.disease;
+            description.textContent = data.description1;
+            remedies.textContent = data.remedies1;
+            if(data.res=="NORMAL"){
+            consult.style.display="none";}
+            else{
+                consult.style.display="block";
+                }
+            togglePopup();
+            console.log('Fetch successful');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    
+});    
+document.addEventListener("DOMContentLoaded", function() {
+    const consultButton = document.getElementById("consultButton");
+    consultButton.addEventListener("click", function() {
+        togglePopup();
+        const loadingOverlay = document.getElementById("loadingOverlay1");
+        loadingOverlay.style.display = "flex";
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "/consult", true);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    // 'xhr.responseText' contains the string response from the server
+                    console.log(xhr.responseText); // Handle the string response as needed
+                    alert("We have got your details and we will mail you the prescription as soon as possible.");
+                    loadingOverlay.style.display = "none";
+                    // Reloads the current page
+                    location.reload();
+                    // Hide loading overlay after processing
+                } else {
+                    // Handle errors if the AJAX request fails
+                    console.error("Error occurred:", xhr.status);
+                    loadingOverlay.style.display = "none";
+                    // Reloads the current page
+                    location.reload();
+                // Hide loading overlay after processing (even in case of an error)
+                }
+            }
+        };
+        xhr.send();
+    });
+});
+function handleDropdownChange() {
+    var selectedOption = document.getElementById("dropdown").value;
+    const loadingOverlay = document.getElementById("loadingOverlay1");
+    loadingOverlay.style.display = "flex";
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", "/translate/" + selectedOption, true);
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                const data = JSON.parse(xhr.responseText);
+                const diseasePlaceholder = document.getElementById("diseasePlaceholder");
+                const descriptionPlaceholder = document.getElementById("descriptionPlaceholder");
+                const remediesPlaceholder = document.getElementById("remediesPlaceholder");
+                const disease = document.getElementById("disease");
+                const description = document.getElementById("description");
+                const remedies = document.getElementById("remedies");
+
+                // Populate your HTML elements with the translated data
+                diseasePlaceholder.textContent = data.res;
+                descriptionPlaceholder.textContent = data.description;
+                remediesPlaceholder.textContent = data.remedies;
+                disease.textContent = data.disease;
+                description.textContent = data.description1;
+                remedies.textContent = data.remedies1;
+                
+                loadingOverlay.style.display = "none";
+            } else {
+                // Handle errors if the AJAX request fails
+                console.error("Error occurred:", xhr.status);
+                loadingOverlay.style.display = "none";
+            }
+        }
+    };
+    xhr.send();
+}
+</script>
+</body>
+</html>

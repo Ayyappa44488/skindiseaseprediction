@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link class="logo1" href="/static/default.png" rel="icon" type="image/x-icon">
+    <title>Open Camera</title>
+    <link rel="stylesheet" href="/static/camerapg.css">
+    <style>
+        /* Center the camera feed and captured image */
+        #cameraContainer, #imageContainer {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        /* Style the captured image */
+        #capturedImage {
+            max-width: 100%;
+            max-height: 80vh;
+            margin-bottom: 10px;
+        }
+
+        /* Style buttons */
+        button {
+            margin: 5px;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* Style close button */
+        .close-button {
+            color:tomato;
+            position: absolute;
+            top: 33px;
+            right: 400px;
+            background-color: transparent;
+            border: none;
+            font-size: 50px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="cameraContainer">
+        <video id="cameraFeed" autoplay style="margin-left:450px;margin-top:80px;"></video><br>
+        <button id="captureButton" style="margin-left:700px;margin-top:20px;">Capture</button>
+    </div>    
+    
+    <div id="imageContainer">
+        <img id="capturedImage" src="" alt="Captured Image"style="margin-left:450px;margin-top:80px;"><br>
+        <button id="retakeButton" style="margin-left:650px;margin-top:20px;display: none;">Retake</button>
+        <button id="uploadButton" style="margin-left:50px;margin-top:20px;display: none;">Upload</button>
+    </div>
+    <button onclick="document.location='/backpredict'" class="close-button">&times;</button>
+    <form id="imageUploadForm" action="/image" method="POST" enctype="multipart/form-data">
+        <input type="hidden" id="capturedImageData" name="capturedImageData">
+    </form>    
+    <div class="popup" id="popup-1">
+        <div class="overlay"></div>
+        <div class="content">
+            <div class="close-btn" onclick="togglePopup()">&times;</div>
+            <div class="container">
+                <label for="dropdown">Select Language:</label>
+                <select id="dropdown" class="dropdown" onchange="handleDropdownChange()">
+                    <option value="en">English</option>
+                    <option value="te">తెలుగు</option>
+                    <option value="hi">हिंदी</option>
+                    <option value="ta">தமிழ்</option>
+                    <option value="kn">ಕನ್ನಡ</option>
+                    <option value="ml">മലയാളം</option>
+                </select>
+            </div>
+            <h1 id="disease"></h1>
+            <p id="diseasePlaceholder"></p>
+            <p><h2 id="description"></h2><br><span id="descriptionPlaceholder"></span></p>
+            <p><h2 id="remedies"></h2><br><span id="remediesPlaceholder"></span></p>
+            <br>
+            {%if not session['doctor']%}
+            <center><button id="consultButton">Consult Doctor</button></center>{%endif%}
+        </div>
+    </div>
+    <div class="loading-overlay" id="loadingOverlay" style="display: none;">
+        <script>
+            for (let i = 0; i < 15; i++) {
+                let parentEl = document.createElement("div");
+                parentEl.classList.add("strand");
+                parentEl.innerHTML = `
+                  <div class="top" style="animation-delay:${i * -0.2}s"></div>
+                  <div class="bottom" style="animation-delay:${-1.5 - (i * 0.2)}s"></div>
+                `;
+                document.querySelector("#loadingOverlay").appendChild(parentEl);
+            }
+        </script>
+    </div> 
+    <div class="loading-overlay" id="loadingOverlay1" style="display: none;">
+        <div class="loading-spinner"></div>
+    </div>
+    <script>
+        function showLoadingOverlay() {
+            const loadingOverlay = document.getElementById("loadingOverlay");
+            loadingOverlay.style.display = "flex";
+        }
+        
+        // Function to hide the loading overlay
+        function hideLoadingOverlay() {
+            const loadingOverlay = document.getElementById("loadingOverlay");
+            loadingOverlay.style.display = "none";
+        }
+        function togglePopup() {
+            document.getElementById("popup-1").classList.toggle("active");
+        }  
+        document.addEventListener("DOMContentLoaded", async () => {
+            const cameraContainer = document.getElementById("cameraContainer");
+            const cameraFeed = document.getElementById("cameraFeed");
+            const captureButton = document.getElementById("captureButton");
+            const closeCameraButton = document.getElementById("closeCameraButton");
+            
+            const imageContainer = document.getElementById("imageContainer");
+            const capturedImage = document.getElementById("capturedImage");
+            const retakeButton = document.getElementById("retakeButton");
+            const uploadButton = document.getElementById("uploadButton");
+        
+            let cameraStream = null;
+            let capturedImageDataUrl = null;
+        
+            // Function to open the camera when the button is clicked
+            try {
+                // Request access to the user's camera
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        
+                // Display the camera stream in the video element
+                cameraFeed.srcObject = stream;
+                cameraStream = stream;
+        
+                // Show the camera container
+                cameraContainer.style.display = "block";
+            } catch (error) {
+                console.error("Error accessing the camera:", error);
+            }
+        
+            // Function to capture a photo
+            captureButton.addEventListener("click", () => {
+                if (cameraStream) {
+                    const canvas = document.createElement("canvas");
+                    const context = canvas.getContext("2d");
+        
+                    // Set canvas dimensions to match the video stream
+                    canvas.width = cameraFeed.videoWidth;
+                    canvas.height = cameraFeed.videoHeight;
+        
+                    // Draw the current frame from the video feed onto the canvas
+                    context.drawImage(cameraFeed, 0, 0, canvas.width, canvas.height);
+        
+                    // Display the captured image
+                    capturedImageDataUrl = canvas.toDataURL("image/jpeg");
+                    capturedImage.src = capturedImageDataUrl;
+                    imageContainer.style.display = "block";
+        
+                    // Enable retake and upload buttons
+                    retakeButton.style.display = "inline-block";
+                    uploadButton.style.display = "inline-block";
+        
+                    // Stop the camera stream
+                    cameraStream.getTracks().forEach(track => track.stop());
+                    cameraStream = null;
+                    cameraContainer.style.display = "none";
+                }
+            });
+        
+            // Function to retake the photo
+            retakeButton.addEventListener("click", async () => {
+
+                // Hide the image container
+                imageContainer.style.display = "none";
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        
+                    // Display the camera stream in the video element
+                    cameraFeed.srcObject = stream;
+                    cameraStream = stream;
+                    cameraContainer.style.display = "block";
+                } catch (error) {
+                    console.error("Error accessing the camera:", error);
+                }
+            });
+        
+            // Function to save the photo and return to the main page
+           // Add an event listener to your button or trigger element
+           uploadButton.addEventListener("click", () => {
+            if (capturedImageDataUrl) {
+                // Convert data URL to Blob
+                fetch(capturedImageDataUrl)
+                    .then(res => res.blob())
+                    .then(blob => {
+                        // Create a FormData object and append the image file
+                        const formData = new FormData();
+                        formData.append('image', blob, 'captured_image.jpg');
+                        showLoadingOverlay();
+                        fetch("/capture", {
+                            method: "POST",
+                            body: formData
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            hideLoadingOverlay();
+                            const diseasePlaceholder = document.getElementById("diseasePlaceholder");
+                            const descriptionPlaceholder = document.getElementById("descriptionPlaceholder");
+                            const remediesPlaceholder = document.getElementById("remediesPlaceholder");
+                            const disease=document.getElementById("disease")
+                            const description=document.getElementById("description")
+                            const remedies=document.getElementById("remedies")
+                            const consult=document.getElementById("consultButton")
+                            // Update placeholders with the data received from the server
+                            if (data.res!="NORMAL"){
+                            diseasePlaceholder.textContent = "You may have "+data.res;}
+                            else{
+                            diseasePlaceholder.textContent = data.res;
+                            }
+                            descriptionPlaceholder.textContent = data.description;
+                            remediesPlaceholder.textContent = data.remedies;
+                            disease.textContent = data.disease;
+                            description.textContent = data.description1;
+                            remedies.textContent = data.remedies1;
+                            if(data.res=="NORMAL"){
+                                consult.style.display="none";}
+                            else{
+                                consult.style.display="block";
+                                }
+                            togglePopup();
+                            console.log("Data fetched from Flask");
+                        })
+                        .catch(error => {
+                            console.error("Error fetching data from Flask:", error);
+                        });
+                    });
+            }
+        });
+    });
+        // Function to close the camera view when the close button is clicked
+    document.addEventListener("DOMContentLoaded", function() {
+        var consultButton = document.getElementById("consultButton");
+        consultButton.addEventListener("click", function() {
+            togglePopup();
+            const loadingOverlay = document.getElementById("loadingOverlay1");
+            loadingOverlay.style.display = "flex";
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "/consult", true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        // 'xhr.responseText' contains the string response from the server
+                        console.log(xhr.responseText); // Handle the string response as needed
+                        alert("We have got your details and we will mail you the prescription as soon as possible.");
+                        loadingOverlay.style.display = "none";
+                        // Reloads the current page
+                        location.reload();
+                        // Hide loading overlay after processing
+                    } else {
+                        // Handle errors if the AJAX request fails
+                        console.error("Error occurred:", xhr.status);
+                        loadingOverlay.style.display = "none";
+                        // Reloads the current page
+                        location.reload();
+                    // Hide loading overlay after processing (even in case of an error)
+                    }
+                }
+            };
+            xhr.send();
+        });
+    });  
+    function handleDropdownChange() {
+        var selectedOption = document.getElementById("dropdown").value;
+        const loadingOverlay = document.getElementById("loadingOverlay1");
+        loadingOverlay.style.display = "flex";
+        
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "/translate/" + selectedOption, true);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    const data = JSON.parse(xhr.responseText);
+                    const diseasePlaceholder = document.getElementById("diseasePlaceholder");
+                    const descriptionPlaceholder = document.getElementById("descriptionPlaceholder");
+                    const remediesPlaceholder = document.getElementById("remediesPlaceholder");
+                    const disease = document.getElementById("disease");
+                    const description = document.getElementById("description");
+                    const remedies = document.getElementById("remedies");
+    
+                    // Populate your HTML elements with the translated data
+                    diseasePlaceholder.textContent = data.res;
+                    descriptionPlaceholder.textContent = data.description;
+                    remediesPlaceholder.textContent = data.remedies;
+                    disease.textContent = data.disease;
+                    description.textContent = data.description1;
+                    remedies.textContent = data.remedies1;
+                    
+                    loadingOverlay.style.display = "none";
+                } else {
+                    // Handle errors if the AJAX request fails
+                    console.error("Error occurred:", xhr.status);
+                    loadingOverlay.style.display = "none";
+                }
+            }
+        };
+        xhr.send();
+    }
+</script>
+</body>
+</html>

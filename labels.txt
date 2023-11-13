@@ -1,0 +1,7 @@
+0 Normal
+1 vitiligo
+2 acne
+3 contact dermatitis
+4 atopic dermatitis
+5 seborrheic dermatitis
+6 scabies
